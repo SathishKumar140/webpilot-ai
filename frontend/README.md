@@ -1,12 +1,62 @@
-# React + Vite
+# WebPilot AI - Frontend
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+This directory contains the frontend of the WebPilot AI application, built with React and Vite.
 
-Currently, two official plugins are available:
+## Overview
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+The frontend provides a user interface for interacting with the WebPilot AI agent. It allows users to:
+-   Input a URL and a natural language instruction for the agent.
+-   Watch the agent perform the task in real-time, with live video streaming.
+-   View a log of the agent's thoughts and actions.
+-   Browse a history of previous runs.
 
-## Expanding the ESLint configuration
+## Project Structure
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+-   **`public/`**: Contains static assets that are served directly.
+-   **`src/`**: Contains the main source code for the React application.
+    -   **`assets/`**: Static assets like images and SVGs that are imported into components.
+    -   **`components/`**: Reusable React components, such as `Header`, `Footer`, etc.
+    -   **`pages/`**: Top-level components that correspond to different pages of the application (e.g., `Home`, `History`).
+    -   **`App.jsx`**: The root component of the application, which sets up routing.
+    -   **`main.jsx`**: The entry point of the application, where the React app is mounted to the DOM.
+    -   **`index.css`**: Global styles and Tailwind CSS configuration.
+
+## Available Scripts
+
+In the `frontend` directory, you can run the following commands:
+
+-   **`npm install`**: Installs the project dependencies.
+-   **`npm run dev`**: Runs the app in development mode with hot-reloading. Open [http://localhost:5173](http://localhost:5173) (or the port specified in the terminal) to view it in the browser.
+-   **`npm run build`**: Builds the app for production to the `dist` folder. It correctly bundles React in production mode and optimizes the build for the best performance.
+-   **`npm run preview`**: Serves the production build locally to preview it before deployment.
+-   **`npm run lint`**: Lints the code to check for errors and enforce code style.
+
+## Running the Frontend Independently
+
+To run the frontend separately from the backend:
+
+1.  **Navigate to the frontend directory:**
+    ```bash
+    cd frontend
+    ```
+
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
+
+3.  **Start the development server:**
+    ```bash
+    npm run dev
+    ```
+
+The frontend connects to the backend using the URL specified in the `VITE_WEBPILOT_BACKEND_URL` environment variable. To configure this:
+
+1.  **Create a `.env` file** in the `frontend` directory.
+2.  **Add the following line** to the `.env` file:
+    ```
+    VITE_WEBPILOT_BACKEND_URL=localhost:8000
+    ```
+3.  **Restart the frontend development server** if it's already running.
+
+Ensure the backend server is running and accessible at the address you've configured.

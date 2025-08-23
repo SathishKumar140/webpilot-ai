@@ -1,34 +1,21 @@
-# Stage 1: Build the React frontend
-FROM node:18-alpine as build
-
-WORKDIR /app/frontend
-
-COPY frontend/package*.json ./
-RUN npm install
-
-COPY frontend/ .
-RUN npm run build
-
-# Stage 2: Build the Python backend
+# Use the official Playwright image with the correct version
 FROM mcr.microsoft.com/playwright:v1.54.0-noble
 
+# Set the working directory
 WORKDIR /app
 
 # Install Python and pip
 RUN apt-get update && apt-get install -y python3 python3-pip && rm -rf /var/lib/apt/lists/*
 
-# Copy built frontend files
-COPY --from=build /app/frontend/dist ./frontend/dist
-
 # Install Python dependencies
 COPY pyproject.toml .
 RUN pip3 install --no-cache-dir --break-system-packages .
 
-# Copy backend code
+# Copy the backend code
 COPY . .
 
+# Expose the FastAPI server port
 EXPOSE 8000
 
-ENV ENV prod
-
+# Start the dev server
 CMD ["python3", "server.py"]

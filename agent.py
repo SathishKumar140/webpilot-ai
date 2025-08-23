@@ -1,8 +1,11 @@
 import asyncio
-from playwright.async_api import async_playwright
-from openai import AsyncOpenAI
+import os
 import base64
 import json
+from playwright.async_api import async_playwright
+from langchain_openai import ChatOpenAI
+from langchain_google_genai import ChatGoogleGenerativeAI
+from langchain_core.messages import HumanMessage, SystemMessage, AIMessage
 from utils import draw_bounding_boxes
 import imageio
 from pydantic import BaseModel
@@ -41,6 +44,7 @@ class Click(Action):
     async def execute(self, page):
         elements = await page.query_selector_all("a, button, input, textarea, [role]")
         element = elements[self.element_id]
+        await element.scroll_into_view_if_needed()
         await element.click(force=True)
 
 class Type(Action):
@@ -122,15 +126,28 @@ class Controller:
 # --- Agent ---
 
 class Agent:
-    def __init__(self, websocket):
+    def __init__(self, websocket, task):
         self.websocket = websocket
-        self.client = AsyncOpenAI()
+        self.task = task
         self.history = []
         self.frames = []
         self.controller = Controller()
 
-    async def run(self, task):
-        await self.send_log(f"[FINAL_AGENT] Starting task: {task.instruction}")
+        if task.model == 'gemini':
+            self.client = ChatGoogleGenerativeAI(
+                model=task.geminiModel,
+                google_api_key=task.geminiApiKey,
+                generation_config={"response_mime_type": "application/json"}
+            )
+        else:
+            self.client = ChatOpenAI(
+                model=task.openaiModel,
+                openai_api_key=task.openaiApiKey,
+                model_kwargs={"response_format": {"type": "json_object"}}
+            )
+
+    async def run(self):
+        await self.send_log(f"[AGENT] Starting task: {self.task.instruction}")
 
         system_prompt = """
         You are an AI agent designed to operate in an iterative loop to automate browser tasks. Your ultimate goal is accomplishing the task provided by the user.
@@ -164,18 +181,31 @@ class Agent:
         - Done("summary")
         """
 
-        self.history.append({"role": "system", "content": system_prompt})
-        self.history.append({"role": "user", "content": f"The task is: {task.instruction}"})
+        self.history.append(SystemMessage(content=system_prompt))
+        self.history.append(HumanMessage(content=f"The task is: {self.task.instruction}"))
 
         async with async_playwright() as p:
             browser = await p.chromium.launch(headless=True)
             page = await browser.new_page()
-            await page.goto(task.url)
+            await page.goto(self.task.url)
 
             for _ in range(15): # Increased step limit
                 browser_state = await self.observe(page)
-                await self.send_screenshot(page, browser_state.dom_state)
-                self.history.append({"role": "user", "content": browser_state.model_dump_json()})
+                screenshot_bytes = await self.send_screenshot(page, browser_state.dom_state)
+                
+                image_b64 = base64.b64encode(screenshot_bytes).decode()
+                
+                text_part = {"type": "text", "text": browser_state.model_dump_json()}
+                image_part = {
+                    "type": "image_url",
+                    "image_url": f"data:image/jpeg;base64,{image_b64}"
+                }
+
+                # OpenAI's gpt-4o uses a slightly different format for image_url
+                if self.task.model == 'openai':
+                    image_part["image_url"] = {"url": image_part["image_url"]}
+
+                self.history.append(HumanMessage(content=[text_part, image_part]))
 
                 action = await self.think(browser_state.dom_state)
                 
@@ -196,6 +226,9 @@ class Agent:
         video_filename = "agent_run.mp4"
         imageio.mimsave(video_filename, self.frames, fps=3)
         await self.send_log(f"[VIDEO]/{video_filename}")
+        await self.send_log("[DONE]")
+
+        return self.history, video_filename
 
     async def observe(self, page):
         page_state = await page.evaluate("""
@@ -242,26 +275,53 @@ class Agent:
         )
 
     async def think(self, dom_state):
-        response = await self.client.chat.completions.create(
-            model="gpt-4.1-mini",
-            messages=self.history,
-            response_format={"type": "json_object"},
-        )
-        response_json = json.loads(response.choices[0].message.content)
+        response = await self.client.ainvoke(self.history)
+        
+        content = response.content
+        # Extract string content if it's a list (multimodal output)
+        if isinstance(content, list):
+            text_content = ""
+            for part in content:
+                if isinstance(part, dict) and part.get("type") == "text":
+                    text_content = part.get("text", "")
+                    break
+            content = text_content
+
+        # Clean the response to ensure it's valid JSON
+        cleaned_content = content.strip()
+        try:
+            # Find the start and end of the JSON object
+            json_start = cleaned_content.find('{')
+            json_end = cleaned_content.rfind('}') + 1
+            if json_start != -1 and json_end != 0:
+                cleaned_content = cleaned_content[json_start:json_end]
+            
+            response_json = json.loads(cleaned_content)
+        except json.JSONDecodeError:
+            # Fallback for markdown-formatted JSON
+            if cleaned_content.startswith("```json"):
+                cleaned_content = cleaned_content[7:-3].strip()
+                response_json = json.loads(cleaned_content)
+            else:
+                raise
         thinking = response_json.get("thinking", "")
         action_str = response_json.get("action", "")
         
-        self.history.append({"role": "assistant", "content": response.choices[0].message.content})
-        await self.send_log(f"[FINAL_AGENT] Thinking: {thinking}")
-        await self.send_log(f"[FINAL_AGENT] Chose action: {action_str}")
+        self.history.append(AIMessage(content=response.content))
+        await self.send_log(f"[AGENT] Thinking: {thinking}")
+        await self.send_log(f"[AGENT] Chose action: {action_str}")
 
         return self.parse_action(action_str, dom_state)
 
 
     def parse_action(self, action_str, dom_state):
-        parts = action_str.strip().replace(")", "").split("(")
-        action_name = parts[0].capitalize()
-        params_str = parts[1] if len(parts) > 1 else ""
+        if isinstance(action_str, dict):
+            action_name = action_str.get("action", "").capitalize()
+            params_str = action_str.get("parameters", "")
+        else:
+            parts = action_str.strip().replace(")", "").split("(")
+            action_name = parts[0].capitalize()
+            params_str = parts[1] if len(parts) > 1 else ""
 
         action_classes = {
             "Hover": Hover,
@@ -316,3 +376,4 @@ class Agent:
         
         screenshot_with_boxes = draw_bounding_boxes(screenshot_bytes, elements)
         await self.websocket.send_bytes(screenshot_with_boxes)
+        return screenshot_bytes

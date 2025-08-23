@@ -11,6 +11,11 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 from agent import Agent
+from database import SessionLocal, engine, Run, get_db
+from sqlalchemy.orm import Session
+from fastapi import Depends
+import json
+from langchain_core.messages import messages_to_dict
 
 # Load environment variables based on ENV setting
 env_path = Path('.') / '.env.dev'
@@ -32,17 +37,19 @@ app.add_middleware(
     allow_headers=["*"],  # Allows all headers
 )
 
-# Serve the React frontend
-app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="static")
-
 @app.get("/video/{filename}")
 async def get_video(filename: str):
     return FileResponse(filename, media_type="video/mp4")
 
+@app.get("/api/runs")
+async def get_runs(db: Session = Depends(get_db)):
+    runs = db.query(Run).all()
+    return runs
+
 
 
 @app.websocket("/ws")
-async def websocket_endpoint(websocket: WebSocket):
+async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)):
     await websocket.accept()
     logging.info(f"UI Client connected from {websocket.client.host}:{websocket.client.port}")
     try:
@@ -50,8 +57,22 @@ async def websocket_endpoint(websocket: WebSocket):
             data = await websocket.receive_text()
             task = AgentTask.model_validate_json(data)
             
-            agent = Agent(websocket)
-            await agent.run(task)
+            agent = Agent(websocket, task)
+            logs, video_filename = await agent.run()
+
+            # Convert logs to a serializable format
+            serializable_logs = messages_to_dict(logs)
+
+            # Save the run to the database
+            run = Run(
+                url=task.url,
+                instruction=task.instruction,
+                logs=json.dumps(serializable_logs),
+                video_url=video_filename
+            )
+            db.add(run)
+            db.commit()
+            db.refresh(run)
 
     except WebSocketDisconnect:
         logging.info(f"UI Client disconnected from {websocket.client.host}:{websocket.client.port}")
@@ -61,6 +82,17 @@ async def websocket_endpoint(websocket: WebSocket):
 class AgentTask(BaseModel):
     url: str
     instruction: str
+    model: str = 'openai'
+    openaiApiKey: str = ''
+    geminiApiKey: str = ''
+    openaiModel: str = 'gpt-4o'
+    geminiModel: str = 'gemini-1.5-flash'
+
+
+# Serve the React frontend in production
+if is_prod:
+    app.mount("/", StaticFiles(directory="frontend/dist", html=True), name="static")
+
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,0 +1,25 @@
+# Docker-specific files
+.dockerignore
+Dockerfile
+Dockerfile.*
+docker-compose.yml
+docker-compose.*.yml
+
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__/
+*.pyc
+
+# Node
+frontend/node_modules
+
+# Environments
+.env
+.env.*
+.venv
+
+# OS-specific
+.DS_Store
