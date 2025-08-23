@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Browser-Use Realtime Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+</head>
+<body class="bg-gray-100 flex flex-col items-center justify-center min-h-screen p-4">
+    <h1 class="text-4xl font-bold text-gray-800 mb-8">Real-time Browser Automation Dashboard</h1>
+    <div class="bg-white shadow-lg rounded-lg p-6 max-w-4xl w-full">
+        <h2 class="text-2xl font-semibold text-gray-700 mb-4">Live Browser View</h2>
+        <div class="flex justify-center items-center bg-gray-200 rounded-md overflow-hidden">
+            <img id="stream" class="max-w-full h-auto border-2 border-gray-300" alt="Real-time browser stream" />
+        </div>
+        <div class="mt-6">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Agent Logs</h2>
+            <div id="logs" class="bg-gray-800 text-green-400 p-4 rounded-md h-64 overflow-y-auto font-mono text-sm">
+                <!-- Agent logs will appear here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const streamImage = document.getElementById('stream');
+        const logsDiv = document.getElementById('logs');
+        const ws = new WebSocket('ws://localhost:8000/ws');
+
+        ws.onopen = () => {
+            console.log('Connected to WebSocket server');
+            logsDiv.innerHTML += `<p class="text-green-400">[INFO] Connected to WebSocket server</p>`;
+        };
+
+        ws.onmessage = event => {
+            if (event.data instanceof Blob) {
+                const imageUrl = URL.createObjectURL(event.data);
+                streamImage.src = imageUrl;
+            } else {
+                // Assuming text messages are logs from the agent
+                logsDiv.innerHTML += `<p>${event.data}</p>`;
+                logsDiv.scrollTop = logsDiv.scrollHeight; // Auto-scroll to bottom
+            }
+        };
+
+        ws.onclose = () => {
+            console.log('Disconnected from WebSocket server');
+            logsDiv.innerHTML += `<p class="text-red-400">[ERROR] Disconnected from WebSocket server</p>`;
+        };
+
+        ws.onerror = (error) => {
+            console.error('WebSocket error:', error);
+            logsDiv.innerHTML += `<p class="text-red-400">[ERROR] WebSocket error: ${error.message}</p>`;
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+websockets
+playwright
+fastapi
+uvicorn
+python-dotenv
+openai
+Pillow
+imageio
+imageio-ffmpeg
