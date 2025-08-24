@@ -6,7 +6,7 @@ readme = "README.md"
 requires-python = ">=3.8"
 license = { text = "MIT" }
 authors = [
-  { name = "Your Name", email = "your@email.com" },
+    { name = "Sathish Kumar", email = "sathish.kumar140@gmail.com" },
 ]
 dependencies = [
     "websockets",

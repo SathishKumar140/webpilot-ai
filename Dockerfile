@@ -17,16 +17,20 @@ WORKDIR /app
 # Install Python and pip
 RUN apt-get update && apt-get install -y python3 python3-pip && rm -rf /var/lib/apt/lists/*
 
-# Install PostgreSQL client library (libpq-dev) and python3-psycopg2
+# Install PostgreSQL client library (libpq-dev) and gcc for psycopg2-binary
 RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
+
+# Install Poetry with --break-system-packages
 RUN pip3 install poetry --break-system-packages
 
 # Copy built frontend files
 COPY --from=build /app/frontend/dist ./frontend/dist
 
-# Install Python dependencies
-COPY pyproject.toml .
-RUN poetry install
+# Copy dependency files (pyproject.toml and poetry.lock)
+# Make sure you have a poetry.lock file in your project directory
+# after running 'poetry install' locally.
+COPY pyproject.toml poetry.lock ./
+RUN poetry install --no-root
 
 # Copy backend code
 COPY . .
