@@ -19,7 +19,7 @@ RUN apt-get update && apt-get install -y python3 python3-pip && rm -rf /var/lib/
 
 # Install PostgreSQL client library (libpq-dev) and python3-psycopg2
 RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
-RUN pip3 install poetry
+RUN pip3 install poetry --break-system-packages
 
 # Copy built frontend files
 COPY --from=build /app/frontend/dist ./frontend/dist
@@ -35,4 +35,4 @@ EXPOSE 8000
 
 ENV ENV prod
 
-CMD ["python3", "server.py"]
+CMD ["poetry", "run", "python3", "server.py"]
