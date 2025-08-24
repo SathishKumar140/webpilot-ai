@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { marked } from 'marked'; // Assuming 'marked' library is installed or will be installed
 
 const History = () => {
   const [regularRuns, setRegularRuns] = useState([]);
@@ -135,10 +136,11 @@ const History = () => {
                           {run.report && JSON.parse(run.report).length > 0 ? (
                             JSON.parse(run.report).map((vuln, index) => (
                               <div key={index} className="bg-gray-200 p-3 rounded-md">
-                                <p className="font-semibold">Type: <span className="font-normal">{vuln.type}</span></p>
+                                <p className="font-semibold">Label: <span className="font-normal">{vuln.label}</span></p>
                                 <p className="font-semibold">Severity: <span className="font-normal">{vuln.severity}</span></p>
-                                {vuln.element_id && <p className="font-semibold">Element ID: <span className="font-normal">{vuln.element_id}</span></p>}
-                                <p className="font-semibold">Message: <span className="font-normal">{vuln.message}</span></p>
+                                <p className="font-semibold">OWASP Category: <span className="font-normal">{vuln.owasp_category}</span></p>
+                                <p className="font-semibold">Description: </p>
+                                <div className="font-normal" dangerouslySetInnerHTML={{ __html: marked(vuln.description) }}></div>
                               </div>
                             ))
                           ) : (

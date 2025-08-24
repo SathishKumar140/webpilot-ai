@@ -1,5 +1,6 @@
 from PIL import Image, ImageDraw, ImageFont
 import io
+from typing import Any
 
 def draw_bounding_boxes(image_bytes, elements):
     img = Image.open(io.BytesIO(image_bytes))
@@ -40,7 +41,7 @@ def draw_bounding_boxes(image_bytes, elements):
     img.save(buf, format='JPEG', quality=95)
     return buf.getvalue()
 
-def check_vulnerabilities(dom_state, page):
+def check_vulnerabilities(dom_state):
     vulnerabilities = []
 
     # Check for insecure forms
@@ -49,10 +50,10 @@ def check_vulnerabilities(dom_state, page):
             action = element.get('action', '')
             if not action.startswith('https'):
                 vulnerabilities.append({
-                    'type': 'Insecure Form',
-                    'severity': 'Medium',
-                    'element_id': element['id'],
-                    'message': f"Form with action '{action}' is not using HTTPS."
+                    'label': 'Insecure Form Submission (OWASP A05:2021 - Security Misconfiguration)',
+                    'severity': 'High',
+                    'description': f"Form with action '{action}' is submitting data over HTTP instead of HTTPS. This can lead to sensitive information being intercepted by attackers.",
+                    'owasp_category': 'A05:2021 - Security Misconfiguration'
                 })
 
     # Check for XSS
@@ -60,14 +61,16 @@ def check_vulnerabilities(dom_state, page):
         if element['tag'] in ['input', 'textarea']:
             # This is a simplified check. A real-world scenario would involve more complex analysis.
             vulnerabilities.append({
-                'type': 'Potential XSS',
+                'label': 'Potential Cross-Site Scripting (XSS) (OWASP A03:2021 - Injection)',
                 'severity': 'High',
-                'element_id': element['id'],
-                'message': f"Input field with id '{element['id']}' might be vulnerable to XSS."
+                'description': f"Input field with id '{element['id']}' might be vulnerable to Cross-Site Scripting (XSS). This occurs when an application includes untrusted data in a web page without proper validation or escaping, allowing attackers to execute malicious scripts in the victim's browser.",
+                'owasp_category': 'A03:2021 - Injection'
             })
 
     return vulnerabilities
 
-def generate_report(vulnerabilities):
-    # Return the raw list of vulnerabilities, which will be JSON stringified later
+def generate_report(vulnerabilities) -> list[dict[str, Any]]:
+    """
+    Generates a penetration test report as a list of dictionaries (JSON-compatible).
+    """
     return vulnerabilities

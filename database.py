@@ -26,6 +26,7 @@ class PentestRun(Base):
     instruction = Column(String, index=True)
     report = Column(Text)
     video_url = Column(String, nullable=True)
+    screenshot = Column(Text, nullable=True)
 
 Base.metadata.create_all(bind=engine)
 

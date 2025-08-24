@@ -24,6 +24,7 @@ dependencies = [
     "imageio-ffmpeg",
     "SQLAlchemy",
     "psycopg2-binary",
+    "langgraph",
 ]
 
 [build-system]
