@@ -101,7 +101,7 @@ async def pentest_websocket_endpoint(websocket: WebSocket, db: Session = Depends
             run = PentestRun(
                 url=task.url,
                 instruction=task.instruction,
-                report=report,
+                report=report.model_dump(), # Pass the dictionary representation
                 video_url=video_filename
             )
             db.add(run)

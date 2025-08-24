@@ -1,6 +1,7 @@
 from sqlalchemy import create_engine, Column, Integer, String, Text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
+from sqlalchemy.dialects.postgresql import JSONB # Import JSONB for PostgreSQL
 import os
 
 DATABASE_URL = os.getenv("DATABASE_URL", "postgresql://user:password@db:5432/agent_db")
@@ -24,7 +25,7 @@ class PentestRun(Base):
     id = Column(Integer, primary_key=True, index=True)
     url = Column(String, index=True)
     instruction = Column(String, index=True)
-    report = Column(Text)
+    report = Column(JSONB)
     video_url = Column(String, nullable=True)
     screenshot = Column(Text, nullable=True)
 

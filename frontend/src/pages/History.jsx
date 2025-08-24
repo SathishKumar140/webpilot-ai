@@ -133,16 +133,30 @@ const History = () => {
                       <div className="bg-gray-100 p-4 rounded-md">
                         <h3 className="text-lg font-semibold mb-2">Report:</h3>
                         <div className="space-y-4">
-                          {run.report && JSON.parse(run.report).length > 0 ? (
-                            JSON.parse(run.report).map((vuln, index) => (
-                              <div key={index} className="bg-gray-200 p-3 rounded-md">
-                                <p className="font-semibold">Label: <span className="font-normal">{vuln.label}</span></p>
-                                <p className="font-semibold">Severity: <span className="font-normal">{vuln.severity}</span></p>
-                                <p className="font-semibold">OWASP Category: <span className="font-normal">{vuln.owasp_category}</span></p>
-                                <p className="font-semibold">Description: </p>
-                                <div className="font-normal" dangerouslySetInnerHTML={{ __html: marked(vuln.description) }}></div>
-                              </div>
-                            ))
+                          {run.report ? (
+                            (() => {
+                              let parsedReport;
+                              try {
+                                parsedReport = JSON.parse(run.report);
+                              } catch (e) {
+                                console.error("Failed to parse report JSON:", e);
+                                return <p>Error parsing report.</p>;
+                              }
+                              
+                              if (parsedReport && parsedReport.vulnerabilities && parsedReport.vulnerabilities.length > 0) {
+                                return parsedReport.vulnerabilities.map((vuln, index) => (
+                                  <div key={index} className="bg-gray-200 p-3 rounded-md">
+                                    <p className="font-semibold">Label: <span className="font-normal">{vuln.label}</span></p>
+                                    <p className="font-semibold">Severity: <span className="font-normal">{vuln.severity}</span></p>
+                                    <p className="font-semibold">OWASP Category: <span className="font-normal">{vuln.owasp_category}</span></p>
+                                    <p className="font-semibold">Description: </p>
+                                    <div className="font-normal" dangerouslySetInnerHTML={{ __html: marked(vuln.description) }}></div>
+                                  </div>
+                                ));
+                              } else {
+                                return <p>No vulnerabilities found.</p>;
+                              }
+                            })()
                           ) : (
                             <p>No vulnerabilities found.</p>
                           )}
