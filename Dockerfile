@@ -25,8 +25,8 @@ RUN apt-get install -y --no-install-recommends \
     python3.11 python3.11-venv python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Poetry
-RUN pip install poetry
+# Install Poetry using --break-system-packages to bypass the error
+RUN pip install poetry --break-system-packages
 
 # Create and activate a virtual environment
 ENV VIRTUAL_ENV=/opt/venv
