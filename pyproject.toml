@@ -3,7 +3,7 @@ name = "webpilot-ai"
 version = "0.1.0"
 description = "AI-powered browser automation tool"
 readme = "README.md"
-requires-python = ">=3.8"
+requires-python = ">=3.9,<3.12"
 license = { text = "MIT" }
 authors = [
     { name = "Sathish Kumar", email = "sathish.kumar140@gmail.com" },
