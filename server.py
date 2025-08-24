@@ -11,7 +11,8 @@ from pathlib import Path
 from dotenv import load_dotenv
 import os
 from agent import Agent
-from database import SessionLocal, engine, Run, get_db
+from pentest_agent import PentestAgent
+from database import SessionLocal, engine, Run, PentestRun, get_db
 from sqlalchemy.orm import Session
 from fastapi import Depends
 import json
@@ -46,6 +47,11 @@ async def get_runs(db: Session = Depends(get_db)):
     runs = db.query(Run).all()
     return runs
 
+@app.get("/api/pentest-runs")
+async def get_pentest_runs(db: Session = Depends(get_db)):
+    runs = db.query(PentestRun).all()
+    return runs
+
 
 
 @app.websocket("/ws")
@@ -78,6 +84,34 @@ async def websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)
         logging.info(f"UI Client disconnected from {websocket.client.host}:{websocket.client.port}")
     except Exception as e:
         logging.error(f"An error occurred in the websocket endpoint: {e}", exc_info=True)
+
+@app.websocket("/ws/pentest")
+async def pentest_websocket_endpoint(websocket: WebSocket, db: Session = Depends(get_db)):
+    await websocket.accept()
+    logging.info(f"UI Client connected from {websocket.client.host}:{websocket.client.port} for pentesting")
+    try:
+        while True:
+            data = await websocket.receive_text()
+            task = AgentTask.model_validate_json(data)
+            
+            agent = PentestAgent(websocket, task)
+            logs, video_filename, report = await agent.run()
+
+            # Save the run to the database
+            run = PentestRun(
+                url=task.url,
+                instruction=task.instruction,
+                report=json.dumps(report),
+                video_url=video_filename
+            )
+            db.add(run)
+            db.commit()
+            db.refresh(run)
+
+    except WebSocketDisconnect:
+        logging.info(f"UI Client disconnected from {websocket.client.host}:{websocket.client.port}")
+    except Exception as e:
+        logging.error(f"An error occurred in the pentest websocket endpoint: {e}", exc_info=True)
 
 class AgentTask(BaseModel):
     url: str

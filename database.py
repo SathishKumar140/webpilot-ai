@@ -18,6 +18,15 @@ class Run(Base):
     logs = Column(Text)
     video_url = Column(String, nullable=True)
 
+class PentestRun(Base):
+    __tablename__ = "pentest_runs"
+
+    id = Column(Integer, primary_key=True, index=True)
+    url = Column(String, index=True)
+    instruction = Column(String, index=True)
+    report = Column(Text)
+    video_url = Column(String, nullable=True)
+
 Base.metadata.create_all(bind=engine)
 
 def get_db():

@@ -7,14 +7,14 @@ export default defineConfig({
   server: {
     proxy: {
       '/ws': {
-        target: 'ws://localhost:8000',
+        target: 'ws://backend:8000',
         ws: true,
       },
       '/api': {
-        target: 'http://localhost:8000',
+        target: 'http://backend:8000',
       },
       '/video': {
-        target: 'http://localhost:8000',
+        target: 'http://backend:8000',
       },
     },
   },

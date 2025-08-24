@@ -8,6 +8,9 @@ services:
       - "5173:5173"
     volumes:
       - ./frontend:/app/frontend
+      - /app/frontend/node_modules
+    environment:
+      - VITE_WEBPILOT_BACKEND_URL=backend:8000
 
   backend:
     build:

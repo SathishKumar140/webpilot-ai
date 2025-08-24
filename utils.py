@@ -39,3 +39,35 @@ def draw_bounding_boxes(image_bytes, elements):
     buf = io.BytesIO()
     img.save(buf, format='JPEG', quality=95)
     return buf.getvalue()
+
+def check_vulnerabilities(dom_state, page):
+    vulnerabilities = []
+
+    # Check for insecure forms
+    for element in dom_state:
+        if element['tag'] == 'form':
+            action = element.get('action', '')
+            if not action.startswith('https'):
+                vulnerabilities.append({
+                    'type': 'Insecure Form',
+                    'severity': 'Medium',
+                    'element_id': element['id'],
+                    'message': f"Form with action '{action}' is not using HTTPS."
+                })
+
+    # Check for XSS
+    for element in dom_state:
+        if element['tag'] in ['input', 'textarea']:
+            # This is a simplified check. A real-world scenario would involve more complex analysis.
+            vulnerabilities.append({
+                'type': 'Potential XSS',
+                'severity': 'High',
+                'element_id': element['id'],
+                'message': f"Input field with id '{element['id']}' might be vulnerable to XSS."
+            })
+
+    return vulnerabilities
+
+def generate_report(vulnerabilities):
+    # Return the raw list of vulnerabilities, which will be JSON stringified later
+    return vulnerabilities
