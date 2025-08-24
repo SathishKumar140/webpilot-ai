@@ -14,8 +14,14 @@ FROM mcr.microsoft.com/playwright:v1.54.0-noble
 
 WORKDIR /app
 
-# Install Python 3.11, pip, and a virtual environment
+# Add the deadsnakes PPA to get access to Python 3.11
 RUN apt-get update && apt-get install -y --no-install-recommends \
+    software-properties-common \
+    && add-apt-repository ppa:deadsnakes/ppa \
+    && apt-get update
+
+# Install Python 3.11, pip, and a virtual environment
+RUN apt-get install -y --no-install-recommends \
     python3.11 python3.11-venv python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
