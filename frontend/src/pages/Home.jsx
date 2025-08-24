@@ -11,7 +11,8 @@ function Home() {
 
   useEffect(() => {
     const backendHost = window.location.host;
-    ws.current = new WebSocket(`ws://${backendHost}/ws`);
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    ws.current = new WebSocket(`${protocol}//${backendHost}/ws`);
 
     ws.current.onopen = () => {
       console.log('WebSocket connection established.');
@@ -27,8 +28,9 @@ function Home() {
       } else {
         if (event.data.startsWith('[VIDEO]')) {
           const backendHost = window.location.host;
+          const protocol = window.location.protocol === 'https:' ? 'https:' : 'http:';
           const videoPath = event.data.split('/')[1];
-          setVideoUrl(`http://${backendHost}/video/${videoPath}`);
+          setVideoUrl(`${protocol}//${backendHost}/video/${videoPath}`);
         } else if (event.data === '[DONE]') {
           setIsRunning(false);
           setLogs(prevLogs => [...prevLogs, { source: 'client', message: '[CLIENT] Task finished.' }]);
