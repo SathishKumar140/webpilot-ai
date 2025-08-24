@@ -17,6 +17,10 @@ WORKDIR /app
 # Install Python and pip
 RUN apt-get update && apt-get install -y python3 python3-pip && rm -rf /var/lib/apt/lists/*
 
+# Install PostgreSQL client library (libpq-dev) and psycopg2-binary
+RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
+RUN pip3 install psycopg2-binary
+
 # Copy built frontend files
 COPY --from=build /app/frontend/dist ./frontend/dist
 
