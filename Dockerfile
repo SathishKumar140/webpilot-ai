@@ -26,7 +26,7 @@ COPY --from=build /app/frontend/dist ./frontend/dist
 
 # Install Python dependencies
 COPY pyproject.toml .
-RUN poetry install --no-root
+RUN poetry install
 
 # Copy backend code
 COPY . .
