@@ -40,7 +40,7 @@ COPY pyproject.toml poetry.lock ./
 
 # Install project dependencies
 RUN poetry install --no-root
-
+RUN poetry run playwright install-deps
 RUN poetry run playwright install
 
 # Copy backend code
