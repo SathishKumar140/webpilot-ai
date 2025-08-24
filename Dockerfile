@@ -13,14 +13,15 @@ COPY frontend/ .
 RUN npm run build
 
 # Stage 3: Build the Python backend
-# Use the same Python version as your project (e.g., python:3.11-slim)
 FROM python:3.11-slim as backend
 
 WORKDIR /app
 
 # Copy Playwright browser dependencies from the playwright_deps stage
-COPY --from=playwright_deps /usr/bin/ms-playwright-browser-drivers /usr/bin/
+# Use the correct paths for the Playwright browsers
 COPY --from=playwright_deps /ms-playwright/ /ms-playwright/
+# The following line is no longer necessary as it's included in the above copy
+# COPY --from=playwright_deps /usr/bin/ms-playwright-browser-drivers /usr/bin/
 ENV PATH="${PATH}:/ms-playwright/"
 
 # Install system dependencies for Playwright and psycopg2
