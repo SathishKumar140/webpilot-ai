@@ -19,13 +19,14 @@ RUN apt-get update && apt-get install -y python3 python3-pip && rm -rf /var/lib/
 
 # Install PostgreSQL client library (libpq-dev) and python3-psycopg2
 RUN apt-get update && apt-get install -y libpq-dev gcc && rm -rf /var/lib/apt/lists/*
+RUN pip3 install poetry
 
 # Copy built frontend files
 COPY --from=build /app/frontend/dist ./frontend/dist
 
 # Install Python dependencies
 COPY pyproject.toml .
-RUN pip3 install --no-cache-dir --break-system-packages .
+RUN poetry install --no-root --no-dev
 
 # Copy backend code
 COPY . .
